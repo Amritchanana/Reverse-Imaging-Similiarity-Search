@@ -18,7 +18,7 @@ out/
 node_modules/.vite/
 
 
-# Environment variables (DO NOT COMMIT)
+# Environment variables
 
 .env
 .env.*
@@ -65,7 +65,6 @@ Thumbs.db
 *.local
 
 
-# Optional shadcn UI config
-# (only if regenerated frequently)
+# shadcn UI config
 
 components.json
