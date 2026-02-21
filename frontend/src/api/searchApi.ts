@@ -1,4 +1,4 @@
-const API_URL = "https://reverse-imaging-similiarity-search.onrender.com/";
+const API_URL = "https://reverse-imaging-similiarity-search.onrender.com";
 
 export const searchImage = async (file: File) => {
   const formData = new FormData();
