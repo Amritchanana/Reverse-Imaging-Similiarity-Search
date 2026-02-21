@@ -5,10 +5,11 @@ import numpy as np
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_URL = "http://localhost:8000"
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-EMB_PATH = os.path.join(BASE_DIR, "embeddings", "image_embeddings.npy")
-META_PATH = os.path.join(BASE_DIR, "index", "metadata.json")
-FAISS_PATH = os.path.join(BASE_DIR, "index", "product.index")
+EMB_PATH = os.path.join(BACKEND_DIR, "embeddings", "image_embeddings.npy")
+META_PATH = os.path.join(BACKEND_DIR, "index", "metadata.json")
+FAISS_PATH = os.path.join(BACKEND_DIR, "index", "product.index")
 
 index = faiss.read_index(FAISS_PATH)
 
