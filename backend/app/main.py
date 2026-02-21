@@ -7,11 +7,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 # Ensure root path is included
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(BASE_DIR)
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(ROOT_DIR)
 
-from scripts.query_embedding import get_query_embedding
-from search import search_similar
+
+from backend.scripts.query_embedding import get_query_embedding
+from backend.app.search import search_similar
 
 app = FastAPI(title="Reverse Image Search API")
 app.add_middleware(
@@ -21,15 +22,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+IMAGE_DIR = os.path.join(ROOT_DIR, "backend", "data", "images_with_product_ids")
 app.mount(
     "/images",
-    StaticFiles(directory="data/images_with_product_ids"),
+    StaticFiles(directory=IMAGE_DIR),
     name="images"
 )
 
 # Absolute uploads directory
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+UPLOAD_DIR = os.path.join(ROOT_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
