@@ -52,6 +52,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect }) => {
         Drag & drop an image or <strong>browse</strong>
       </p>
       <p className="upload-zone__hint">Supports JPG, PNG, WEBP</p>
+      <p className="upload-zone__disclaimer">
+        Please upload only clothing or wearable images for similarity search.
+      </p>
       <input
         ref={inputRef}
         type="file"
