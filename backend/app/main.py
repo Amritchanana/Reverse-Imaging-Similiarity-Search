@@ -1,3 +1,4 @@
+"""
 import os
 import sys
 import uuid
@@ -85,6 +86,95 @@ async def search_image(
         "query_image": unique_name,
         "results": results
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+"""
+# First fix- Two things to add: lifespan warmup + env-based BASE_URL + auto-delete uploads
+
+import os
+import sys
+import uuid
+import shutil
+import asyncio
+import numpy as np
+import cv2
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(ROOT_DIR)
+
+from backend.scripts.query_embedding import get_query_embedding
+from backend.app.search import search_similar
+
+UPLOAD_DIR = os.path.join(ROOT_DIR, "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Warm up model at startup — compiles tf.function graph
+    dummy_path = os.path.join(UPLOAD_DIR, "warmup.jpg")
+    dummy_img = np.ones((224, 224, 3), dtype=np.uint8) * 128
+    cv2.imwrite(dummy_path, dummy_img)
+    get_query_embedding(dummy_path)
+    os.remove(dummy_path)
+    print("✅ Model warmed up and ready", flush=True)
+    yield
+
+app = FastAPI(title="Reverse Image Search API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+IMAGE_DIR = os.path.join(ROOT_DIR, "backend", "data", "images_with_product_ids")
+app.mount("/images", StaticFiles(directory=IMAGE_DIR), name="images")
+
+async def delete_later(path: str, delay: int = 60):
+    await asyncio.sleep(delay)
+    if os.path.exists(path):
+        os.remove(path)
+
+@app.get("/")
+def health_check():
+    return {"status": "API is running"}
+
+@app.post("/search")
+async def search_image(file: UploadFile = File(...), category: str | None = None):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files are allowed")
+
+    ext = os.path.splitext(file.filename)[1]
+    unique_name = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(UPLOAD_DIR, unique_name)
+
+    try:
+        with open(file_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to save uploaded file")
+
+    try:
+        query_emb = get_query_embedding(file_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Embedding failed: {str(e)}")
+
+    try:
+        results = search_similar(query_emb, k=10, category=category)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+    asyncio.create_task(delete_later(file_path))
+
+    return {"query_image": unique_name, "results": results}
 
 if __name__ == "__main__":
     import uvicorn
