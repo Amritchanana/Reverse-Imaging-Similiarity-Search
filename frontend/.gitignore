@@ -68,3 +68,5 @@ Thumbs.db
 # shadcn UI config
 
 components.json
+
+.vercel
