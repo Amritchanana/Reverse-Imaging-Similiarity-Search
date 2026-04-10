@@ -47,7 +47,9 @@ import os
 import faiss
 import json
 import numpy as np
+from dotenv import load_dotenv
 
+load_dotenv()
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")  # env-based
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -83,9 +85,11 @@ def search_similar(query_emb, k=10, category=None):
         item = metadata[idx]
         if category and item.get("category") != category:
             continue
+        image_url = item.get("cloudinary_url") or f"{BASE_URL}/images/{item['image_path']}"
         results.append({
+            "Score": float(score),
             "score": float(score),
-            "image_url": f"{BASE_URL}/images/{item['image_path']}",
+            "image_url": image_url,
             **item
         })
         if len(results) == k:
